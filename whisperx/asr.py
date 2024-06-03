@@ -193,7 +193,8 @@ class FasterWhisperPipeline(Pipeline):
             # This is a trick, the whisperx may crash if skip the VAD step
             self.vad_model({"waveform": torch.from_numpy(audio).unsqueeze(0), "sample_rate": SAMPLE_RATE})
         if self.tokenizer is None:
-            language = language or self.detect_language(audio)
+            if not language:
+                language, _ = self.detect_language(audio)
             task = task or "transcribe"
             self.tokenizer = faster_whisper.tokenizer.Tokenizer(self.model.hf_tokenizer,
                                                                 self.model.model.is_multilingual, task=task,
@@ -254,7 +255,7 @@ class FasterWhisperPipeline(Pipeline):
         language_token, language_probability = results[0][0]
         language = language_token[2:-2]
         print(f"Detected language: {language} ({language_probability:.2f}) in first 30s of audio...")
-        return language
+        return language, language_probability
 
 def load_model(whisper_arch,
                device,
